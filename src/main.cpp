@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-//#include <DNSServer.h>
+#include <DNSServer.h>
 #include <WiFi.h>
-//#include <AsyncTCP.h>
+#include <AsyncTCP.h>
 #include "ESPAsyncWebServer.h" //https://github.com/me-no-dev/ESPAsyncWebServer/blob/master/examples/CaptivePortal/CaptivePortal.ino
 
 #include <SD.h>
@@ -12,10 +12,9 @@ void printDirectory(File dir, int numTabs);
 bool loadFromSdCard(AsyncWebServerRequest *request);
 void handleNotFound(AsyncWebServerRequest *request);
 
-//DNSServer dnsServer;
+DNSServer dnsServer;
 AsyncWebServer server(80);
 const int CS_SDcard = 5;
-
 
 class CaptiveRequestHandler : public AsyncWebHandler {
 public:
@@ -32,7 +31,7 @@ public:
     response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
     response->print("<p>This is out captive portal front page.</p>");
     response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
-    response->printf("<p>Try opening <a href='http://%s'>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
+    response->printf("<p>Try opening <a href='http://%s'/index.html>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
     response->print("</body></html>");
     request->send(response);
   }
@@ -62,16 +61,16 @@ void setup(){
   WiFi.softAP("esp-captive");
   Serial.print("Local IP Address:"); 
   Serial.println(WiFi.localIP());
-  //dnsServer.start(53, "*", WiFi.softAPIP());
+  dnsServer.start(53, "*", WiFi.softAPIP());
   //server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
+ 
   server.onNotFound(handleNotFound);
-
   //more handlers...
   server.begin();
 }
 
 void loop(){
-  //dnsServer.processNextRequest();
+  dnsServer.processNextRequest();
 }
 
 
@@ -79,14 +78,16 @@ void loop(){
 
 void handleNotFound(AsyncWebServerRequest *request){
   
+  Serial.println ("Function: handleNotFound reached!!!!!!!");
+
   String path = request->url();
   Serial.print("handleNotFound: ");
   Serial.println(path);
 
-  if(path.endsWith("/")) path += "index.html";
-  if(loadFromSdCard(request)){
-    return;
-  }
+  //if(path.endsWith("/")) path += "index.html";
+  if(loadFromSdCard(request)){return;}
+
+
   String message = "\nNo Handler\r\n";
   message += "URI: ";
   message += request->url();
@@ -114,6 +115,10 @@ bool loadFromSdCard(AsyncWebServerRequest *request) {
       };
       fileBlk *fileObj = new fileBlk;
       
+
+      if(path.endsWith("/generate_204")) {path = "/index.html"; Serial.println("¡*************!");}
+      if(path.endsWith("/connecttest.txt")) {path = "/index.html"; Serial.println("¡*************!");}
+      if(path.endsWith("/redirect")) {path = "/index.html"; Serial.println("¡*************!");}
       if(path.endsWith("/")) path += "index.htm";
       if(path.endsWith(".src")) path = path.substring(0, path.lastIndexOf("."));
       else if(path.endsWith(".html")) dataType = "text/html";
