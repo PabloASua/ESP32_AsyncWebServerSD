@@ -16,27 +16,6 @@ DNSServer dnsServer;
 AsyncWebServer server(80);
 const int CS_SDcard = 5;
 
-class CaptiveRequestHandler : public AsyncWebHandler {
-public:
-  CaptiveRequestHandler() {}
-  virtual ~CaptiveRequestHandler() {}
-
-  bool canHandle(AsyncWebServerRequest *request){
-    //request->addInterestingHeader("ANY");
-    return true;
-  }
-
-  void handleRequest(AsyncWebServerRequest *request) {
-    AsyncResponseStream *response = request->beginResponseStream("text/html");
-    response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
-    response->print("<p>This is out captive portal front page.</p>");
-    response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
-    response->printf("<p>Try opening <a href='http://%s'/index.html>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
-    response->print("</body></html>");
-    request->send(response);
-  }
-};
-
 
 void setup(){
 
@@ -62,8 +41,7 @@ void setup(){
   Serial.print("Local IP Address:"); 
   Serial.println(WiFi.localIP());
   dnsServer.start(53, "*", WiFi.softAPIP());
-  //server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
- 
+   
   server.onNotFound(handleNotFound);
   //more handlers...
   server.begin();
@@ -84,7 +62,6 @@ void handleNotFound(AsyncWebServerRequest *request){
   Serial.print("handleNotFound: ");
   Serial.println(path);
 
-  //if(path.endsWith("/")) path += "index.html";
   if(loadFromSdCard(request)){return;}
 
 
