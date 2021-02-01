@@ -12,6 +12,7 @@ void printDirectory(File dir, int numTabs);
 bool loadFromSdCard(AsyncWebServerRequest *request);
 void handleNotFound(AsyncWebServerRequest *request);
 
+
 DNSServer dnsServer;
 AsyncWebServer server(80);
 const int CS_SDcard = 5;
@@ -43,6 +44,33 @@ void setup(){
   dnsServer.start(53, "*", WiFi.softAPIP());
    
   server.onNotFound(handleNotFound);
+  
+  
+  server.on("/networkUpdate", HTTP_GET, [] (AsyncWebServerRequest *request){
+    const char* SSID = "ssid";
+    const char* PASSWORD = "password";
+    String inputMessage1;
+    String inputMessage2;
+    // GET input1 value on <ESP_IP>/networkUpdate?ssid=<inputMessage1>&password=<inputMessage2>
+    if (request->hasParam(SSID) && request->hasParam(PASSWORD)){
+      inputMessage1 = request->getParam(SSID)->value();
+      inputMessage2 = request->getParam(PASSWORD)->value();
+      request->send(200, "text/plain", "OK");
+    }
+    else{
+      inputMessage1 = "Msg Error";
+      inputMessage2 = "Msg Error";
+      request->send(200, "text/plain", "Error");
+    }
+
+    Serial.print("Network Update -> SSID: ");
+    Serial.print(inputMessage1);
+    Serial.print(" Password: ");
+    Serial.println(inputMessage2);
+  });
+  
+  
+  
   //more handlers...
   server.begin();
 }
@@ -50,8 +78,6 @@ void setup(){
 void loop(){
   dnsServer.processNextRequest();
 }
-
-
 
 
 void handleNotFound(AsyncWebServerRequest *request){
